@@ -1,11 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 public class GameManager : MonoBehaviour
 {
+    // Screen UI GameObjects
     public GameObject background;
     public GameObject homeScreen;
     public GameObject pauseScreen;
@@ -18,16 +19,25 @@ public class GameManager : MonoBehaviour
     public GameObject round2EndScreen;
     public GameObject round3EndScreen;
     public GameObject round4EndScreen;
+    public GameObject gameoverScreen;
 
+    // GameObjects
+    public GameObject myCamera;
+    public GameObject cameraPos;
+    public GameObject player;
+    public GameObject round1Transform, round1CameraPos, round1Objects;
+    public GameObject round2Transform, round2CameraPos, round2Objects;
+    public GameObject round3Transform, round3CameraPos, round3Objects;
+    public GameObject round4Transform, round4CameraPos, round4Objects;
+
+    // UI Texts
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI lifeText;
+    public TextMeshProUGUI timeText;
+    public TextMeshProUGUI totalTime1;
+    public TextMeshProUGUI totalTime2;
 
-    public GameObject myCamera;
-    public GameObject player;
-    public GameObject round1Transform, round1Objects;
-    public GameObject round2Transform, round2Objects;
-    public GameObject round3Transform, round3Objects;
-    public GameObject round4Transform, round4Objects;
+    // Public Variables
     public float score;
     public int health;
     public bool isGameover;
@@ -42,21 +52,27 @@ public class GameManager : MonoBehaviour
     public bool round3;
     public bool round4;
 
+    private Rigidbody playerRb;
     private AudioSource music;
+    private int minutes;
+    private int seconds;
+    private float timeCount;
 
     void Start()
     {
-        health = 3;
         Time.timeScale = 0;
+        music = myCamera.GetComponent<AudioSource>();
+        playerRb = player.GetComponent<Rigidbody>();
+        health = 3;
         homeScreen.SetActive(true);
         background.SetActive(true);
-        music = myCamera.GetComponent<AudioSource>();
     }
 
     void Update()
     {
         PauseGame();
         RoundComplete();
+        Timer();
         CheckGameover();
         DisplayUI();
     }
@@ -88,51 +104,81 @@ public class GameManager : MonoBehaviour
     {
         if(round1Complete == true)
         {
+            music.Stop();
             background.SetActive(true);
 
             player.transform.position = round2Transform.transform.position;
             player.transform.rotation = round2Transform.transform.rotation;
 
+            playerRb.velocity = Vector3.zero;
+            playerRb.angularVelocity = Vector3.zero;
+
             round1EndScreen.SetActive(true);
             round1Complete = false;
+            Time.timeScale = 0;
         }
         else if (round2Complete == true)
         {
+            music.Stop();
             background.SetActive(true);
 
             player.transform.position = round3Transform.transform.position;
             player.transform.rotation = round3Transform.transform.rotation;
 
+            playerRb.velocity = Vector3.zero;
+            playerRb.angularVelocity = Vector3.zero;
+
             round2EndScreen.SetActive(true);
             round2Complete = false;
+            Time.timeScale = 0;
         }
         else if (round3Complete == true)
         {
+            music.Stop();
             background.SetActive(true);
 
             player.transform.position = round4Transform.transform.position;
             player.transform.rotation = round4Transform.transform.rotation;
 
+            playerRb.velocity = Vector3.zero;
+            playerRb.angularVelocity = Vector3.zero;
+
             round3EndScreen.SetActive(true);
             round3Complete = false;
+            Time.timeScale = 0;
         }
         else if (round4Complete == true)
         {
+            music.Stop();
             background.SetActive(true);
 
             player.transform.position = round1Transform.transform.position;
             player.transform.rotation = round1Transform.transform.rotation;
 
+            playerRb.velocity = Vector3.zero;
+            playerRb.angularVelocity = Vector3.zero;
+
             round4EndScreen.SetActive(true);
             round4Complete = false;
+            Time.timeScale = 0;
         }
+    }
+
+    void Timer()
+    {
+        timeCount += Time.deltaTime;
+        minutes = Mathf.FloorToInt(timeCount / 60);
+        seconds = Mathf.FloorToInt(timeCount % 60);
     }
 
     void CheckGameover()
     {
         if (isGameover)
         {
-
+            music.Stop();
+            Time.timeScale = 0;
+            background.SetActive(true);
+            gameoverScreen.SetActive(true);
         }
     }
 
@@ -140,6 +186,14 @@ public class GameManager : MonoBehaviour
     {
         scoreText.text = "Score: " + score;
         lifeText.text = "Life: " + health;
+        timeText.text = "Time: " + string.Format("{0:00}:{1:00}", minutes, seconds);
+        totalTime1.text = "Time: " + string.Format("{0:00}:{1:00}", minutes, seconds);
+        totalTime2.text = "Time: " + string.Format("{0:00}:{1:00}", minutes, seconds);
+    }
+
+    public void UpdateScore(int addScore)
+    {
+        score += addScore;
     }
 
     public void Round1()
@@ -165,12 +219,19 @@ public class GameManager : MonoBehaviour
         round3Objects.SetActive(false);
         round4Objects.SetActive(false);
 
+        cameraPos.transform.position = round1CameraPos.transform.position;
+        cameraPos.transform.rotation = round1CameraPos.transform.rotation;
         player.transform.position = round1Transform.transform.position;
         player.transform.rotation = round1Transform.transform.rotation;
     }
 
     public void Round2()
     {
+        Time.timeScale = 1;
+        if (isMusic)
+        {
+            music.Play();
+        }
         round1 = false;
         round2 = true;
         round3 = false;
@@ -186,12 +247,19 @@ public class GameManager : MonoBehaviour
         round3Objects.SetActive(false);
         round4Objects.SetActive(false);
 
+        cameraPos.transform.position = round2CameraPos.transform.position;
+        cameraPos.transform.rotation = round2CameraPos.transform.rotation;
         player.transform.position = round2Transform.transform.position;
         player.transform.rotation = round2Transform.transform.rotation;
     }
 
     public void Round3()
     {
+        Time.timeScale = 1;
+        if (isMusic)
+        {
+            music.Play();
+        }
         round1 = false;
         round2 = false;
         round3 = true;
@@ -207,12 +275,19 @@ public class GameManager : MonoBehaviour
         round3Objects.SetActive(true);
         round4Objects.SetActive(false);
 
+        cameraPos.transform.position = round3CameraPos.transform.position;
+        cameraPos.transform.rotation = round3CameraPos.transform.rotation;
         player.transform.position = round3Transform.transform.position;
         player.transform.rotation = round3Transform.transform.rotation;
     }
 
     public void Round4()
     {
+        Time.timeScale = 1;
+        if (isMusic)
+        {
+            music.Play();
+        }
         round1 = false;
         round2 = false;
         round3 = false;
@@ -228,28 +303,10 @@ public class GameManager : MonoBehaviour
         round3Objects.SetActive(false);
         round4Objects.SetActive(true);
 
+        cameraPos.transform.position = round4CameraPos.transform.position;
+        cameraPos.transform.rotation = round4CameraPos.transform.rotation;
         player.transform.position = round4Transform.transform.position;
         player.transform.rotation = round4Transform.transform.rotation;
-    }
-
-    public void StartGame()
-    {
-        Round1();
-    }
-
-    public void SecondRound()
-    {
-        Round2();
-    }
-
-    public void ThirdRound()
-    {
-        Round3();
-    }
-
-    public void FourthRound()
-    {
-        Round4();
     }
 
     public void GameOptions()
@@ -274,6 +331,8 @@ public class GameManager : MonoBehaviour
 
     public void BackToHome()
     {
+        music.Stop();
+        gameoverScreen.SetActive(false);
         optionScreen.SetActive(false);
         round1EndScreen.SetActive(false);
         round2EndScreen.SetActive(false);
@@ -299,5 +358,10 @@ public class GameManager : MonoBehaviour
         background.SetActive(false);
         homeScreen.SetActive(false);
         exitScreen.SetActive(true);
+    }
+
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(0);
     }
 }

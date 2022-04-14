@@ -5,20 +5,16 @@ using UnityEngine;
 public class CameraFollow : MonoBehaviour
 {
     public GameObject player;
+    public float rotationSpeed;
 
-    private Vector3 playerOffset;
-
-    void Start()
-    {
-        playerOffset = new Vector3(0, 1.25f, 0);
-    }
-
-    void LateUpdate()
+    void Update()
     {
         if (player != null)
         {
-            transform.position = player.transform.position + playerOffset;
-            transform.eulerAngles = new Vector3(25, player.transform.eulerAngles.y, transform.rotation.z);
+            transform.position = player.transform.position;
+            float horizontalInput = Input.GetAxis("Horizontal");
+
+            transform.Rotate(Vector3.up, horizontalInput * rotationSpeed * Time.deltaTime);
         }
     }
 }

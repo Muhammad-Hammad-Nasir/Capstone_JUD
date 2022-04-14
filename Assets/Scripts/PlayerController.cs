@@ -4,27 +4,29 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    public AudioClip jumpSound;
+    public AudioClip coinTakenSound;
+    public AudioClip airTimeSound;
+    public AudioClip deathSound;
     public float jumpForce = 500;
+    public bool isGrounded = true;
 
     private GameManager gameManager;
+    private GameObject focalPoint;
     private Rigidbody playerRb;
-    private float horizontal;
+    private AudioSource playerSounds;
     private float vertical;
-    private float rotatePos;
-    private float startRotation;
-    private float turnSpeed = 50;
     private float moveSpeed = 2000;
-    //private float rotateOffset = 5;
-    //private float rotateLimit = 60;
     private float yLimit = 5;
-    private float maxSpeed = 20;
-    private bool isGrounded = true;
+    private float maxSpeed = 100;
 
     void Start()
     {
+        Physics.gravity = new Vector3(0, -20f, 0);
+        playerSounds = GetComponent<AudioSource>();
         gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+        focalPoint = GameObject.Find("Focal Point");
         playerRb = GetComponent<Rigidbody>();
-        startRotation = transform.localEulerAngles.y;
     }
 
     void Update()
@@ -39,49 +41,29 @@ public class PlayerController : MonoBehaviour
 
     void Movement()
     {
-        horizontal = Input.GetAxis("Horizontal");
         vertical = Input.GetAxis("Vertical");
-        rotatePos = transform.localEulerAngles.y;
 
         if (vertical >= 0 && isGrounded)
         {
             playerRb.drag = 0.5f;
-            playerRb.AddRelativeForce(Vector3.forward * vertical * moveSpeed);
+
+            playerRb.AddForce(focalPoint.transform.forward * vertical * moveSpeed);
             playerRb.velocity = Vector3.ClampMagnitude(playerRb.velocity, maxSpeed);
         }
         else if (vertical < 0 && isGrounded)
         {
             playerRb.drag += 0.05f;
         }
-
-        transform.Rotate(Vector3.up * Time.deltaTime * horizontal * turnSpeed);
-
-        //if ((rotatePos <= startRotation + rotateLimit && rotatePos > 0) || (rotatePos > (360 + startRotation) - rotateLimit))
-        //{
-        //    transform.Rotate(Vector3.up * Time.deltaTime * horizontal * turnSpeed);
-        //}
-        //else if (rotatePos > rotateLimit && rotatePos < rotateLimit + rotateOffset)
-        //{
-        //    transform.rotation = Quaternion.Euler(transform.eulerAngles.x, rotateLimit, transform.eulerAngles.z);
-        //}
-        //else if (rotatePos < 360 - rotateLimit && rotatePos > 360 - rotateLimit - rotateOffset)
-        //{
-        //    transform.rotation = Quaternion.Euler(transform.eulerAngles.x, 360 - rotateLimit, transform.eulerAngles.z);
-        //}
-        //else if (rotatePos > rotateLimit + rotateOffset && rotatePos < (360 - rotateLimit - rotateOffset))
-        //{
-        //    Debug.Log("Restart");
-        //}
     }
 
     void Jump()
     {
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
+            playerSounds.PlayOneShot(jumpSound, 1);
             StartCoroutine(JumpScore());
-            playerRb.AddRelativeForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            playerRb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             isGrounded = false;
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0, transform.eulerAngles.y, 0), 0.5f);
             playerRb.drag = 0;
         }
     }
@@ -90,9 +72,28 @@ public class PlayerController : MonoBehaviour
     {
         if (transform.position.y < -yLimit)
         {
-            Debug.Log("Gameover");
-            gameManager.isGameover = true;
-            Destroy(gameObject);
+            gameManager.health--;
+            if (gameManager.round1 == true && gameManager.health > 0)
+            {
+                gameManager.Round1();
+            }
+            else if (gameManager.round2 == true && gameManager.health > 0)
+            {
+                gameManager.Round2();
+            }
+            else if (gameManager.round3 == true && gameManager.health > 0)
+            {
+                gameManager.Round3();
+            }
+            else if (gameManager.round4 == true && gameManager.health > 0)
+            {
+                gameManager.Round4();
+            }
+            else if (gameManager.health == 0)
+            {
+                playerSounds.PlayOneShot(deathSound, 1);
+                gameManager.isGameover = true;
+            }
         }
     }
 
@@ -123,9 +124,9 @@ public class PlayerController : MonoBehaviour
             }
             else if (gameManager.health == 0)
             {
+                playerSounds.PlayOneShot(deathSound, 1);
                 gameManager.isGameover = true;
             }
-            Debug.Log("Dead");
         }
         else if (collision.gameObject.CompareTag("Finish1"))
         {
@@ -149,18 +150,19 @@ public class PlayerController : MonoBehaviour
     {
         if (other.CompareTag("PickUp"))
         {
+            playerSounds.PlayOneShot(coinTakenSound, 1);
             Destroy(other.gameObject);
-            Debug.Log("Coin Points");
+            gameManager.UpdateScore(20);
         }
         else if (other.CompareTag("PathFlags"))
         {
             Destroy(other.GetComponent<BoxCollider>());
-            Debug.Log("Bonus Flag Points");
+            gameManager.UpdateScore(30);
         }
         else if (other.CompareTag("RingPath"))
         {
             Destroy(other.GetComponent<BoxCollider>());
-            Debug.Log("Bonus Ring Points");
+            gameManager.UpdateScore(10);
         }
     }
 
@@ -169,7 +171,8 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(2);
         if(!isGrounded)
         {
-            Debug.Log("Jump Score");
+            playerSounds.PlayOneShot(airTimeSound, 1);
+            gameManager.UpdateScore(40);
         }
     }
 }
